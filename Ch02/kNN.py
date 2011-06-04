@@ -49,20 +49,15 @@ def create_data_set():
     return group, labels
 
 
-def file2matrix(filename):
-    fr = open(filename)
-    numberOfLines = len(fr.readlines())
-    returnMat = zeros((numberOfLines, 3))
-    classLabelVector = []
-    fr = open(filename)
-    index = 0
-    for line in fr.readlines():
-        line = line.strip()
-        listFromLine = line.split('\t')
-        returnMat[index,:] = listFromLine[0:3]
-        classLabelVector.append(int(listFromLine[-1]))
-        index += 1
-    return returnMat, classLabelVector
+def load_data_set(filename):
+    f = open(filename)
+    class_labels = []
+    data = []
+    for line in f:
+        columns = line.strip().split()
+        data.append([float(i) for i in columns[:3]])
+        class_labels.append(int(columns[-1]))
+    return array(data), class_labels
 
 
 def autoNorm(dataSet):
@@ -80,7 +75,7 @@ def autoNorm(dataSet):
 def dating_class_test():
     # Hold out 10%.
     hoRatio = 0.50
-    datingDataMat, datingLabels = file2matrix('datingTestSet2.txt')
+    datingDataMat, datingLabels = load_data_set('datingTestSet2.txt')
     normMat, ranges, minVals = autoNorm(datingDataMat)
     m = normMat.shape[0]
     numTestVecs = int(m * hoRatio)
