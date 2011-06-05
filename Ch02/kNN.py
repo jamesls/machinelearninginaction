@@ -14,7 +14,7 @@ Output:     the most popular class label
 import operator
 from os import listdir
 
-from numpy import tile, array, zeros, shape
+from numpy import tile, array, zeros, shape, subtract, divide
 
 
 def knn_classify(input_vector, training_set, labels, k):
@@ -50,6 +50,22 @@ def create_data_set():
 
 
 def load_data_set(filename):
+    """Loads a dataset from a filename.
+
+    The expected format is:
+
+        1.0 0.9 0.8 3
+        3.0 0.1 0.2 2
+
+    Where the first three columns are the raw data, and the 4th column in the
+    class label.  The data returned is a tuple of a 2d array consisting of the
+    three data columns and a list containing the class labels.  For example,
+    the above data would correspond to a return value of::
+
+        array([[1.0, 0.9, 0.8],
+               [3.0, 0.1, 0.2]]), [3, 2]
+
+    """
     f = open(filename)
     class_labels = []
     data = []
@@ -60,23 +76,33 @@ def load_data_set(filename):
     return array(data), class_labels
 
 
-def autoNorm(dataSet):
-    minVals = dataSet.min(0)
-    maxVals = dataSet.max(0)
-    ranges = maxVals - minVals
-    normDataSet = zeros(shape(dataSet))
-    m = dataSet.shape[0]
-    normDataSet = dataSet - tile(minVals, (m, 1))
-    # Element wise division
-    normDataSet = normDataSet / tile(ranges, (m, 1))
-    return normDataSet, ranges, minVals
+def normalize(data):
+    """Normalize the dataset.
+
+    Using the equation::
+
+        newvalue = (oldvalue - min) / (min - max)
+
+    """
+    minimum_values = data.min(0)
+    maximum_values = data.max(0)
+    # A vector containing the range for each column,
+    # so something like [10, 14, 20] indicates that the
+    # first column has a range of 10, the second a range
+    # of 14, and the third column has a range of 20.
+    ranges = maximum_values - minimum_values
+
+    # Element wise computation of:
+    # (old - min) / (min - max)
+    normalized_data = divide(subtract(data, minimum_values), ranges)
+    return normalized_data, ranges, minimum_values
 
 
 def dating_class_test():
     # Hold out 10%.
     hoRatio = 0.50
     datingDataMat, datingLabels = load_data_set('datingTestSet2.txt')
-    normMat, ranges, minVals = autoNorm(datingDataMat)
+    normMat, ranges, minimum_values = normalize(datingDataMat)
     m = normMat.shape[0]
     numTestVecs = int(m * hoRatio)
     errorCount = 0.0
