@@ -15,7 +15,7 @@ import operator
 from os import listdir
 from collections import defaultdict
 
-from numpy import tile, array, zeros, shape, subtract, divide, square, sqrt
+from numpy import array, zeros, subtract, divide, square, sqrt
 
 
 def knn_classify(input_vector, training_set, labels, k):
@@ -131,13 +131,12 @@ def dating_class_test():
 
 
 def img2vector(filename):
-    returnVect = zeros((1, 1024))
-    fr = open(filename)
-    for i in range(32):
-        lineStr = fr.readline()
+    vector = zeros((1, 1024))
+    f = open(filename)
+    for i, line in enumerate(f):
         for j in range(32):
-            returnVect[0, 32*i+j] = int(lineStr[j])
-    return returnVect
+            vector[0, 32 * i + j] = int(line[j])
+    return vector
 
 
 def handwritingClassTest():
