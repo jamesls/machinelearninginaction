@@ -100,21 +100,27 @@ def normalize(data):
 
 def dating_class_test():
     # Hold out 10%.
-    hoRatio = 0.50
-    datingDataMat, datingLabels = load_data_set('datingTestSet2.txt')
-    normMat, ranges, minimum_values = normalize(datingDataMat)
-    m = normMat.shape[0]
-    numTestVecs = int(m * hoRatio)
-    errorCount = 0.0
-    for i in range(numTestVecs):
-        classifierResult = knn_classify(normMat[i,:], normMat[numTestVecs:m,:],
-                                        datingLabels[numTestVecs:m], 3)
+    holdout_ratio = 0.10
+    dating_data, dating_labels = load_data_set('datingTestSet2.txt')
+    normalized_data, ranges, minimum_values = normalize(dating_data)
+    num_test_vectors = int(normalized_data.shape[0] * holdout_ratio)
+    error_count = 0.0
+    # The ordering of the data set has no particular meaning,
+    # so using the first num_test_vectors as the test vectors
+    # and the remaining vectors as the training data is a
+    # reasonable partitioning.
+    training_data = normalized_data[num_test_vectors:,:]
+    training_labels = dating_labels[num_test_vectors:]
+    for i in range(num_test_vectors):
+        classifier_result = knn_classify(normalized_data[i,:], training_data,
+                                         training_labels, 3)
         print "the classifier came back with: %d, the real answer is: %d" % \
-            (classifierResult, datingLabels[i])
-        if classifierResult != datingLabels[i]:
-            errorCount += 1.0
-    print "the total error rate is: %f" % (errorCount / float(numTestVecs))
-    print errorCount
+            (classifier_result, dating_labels[i])
+        if classifier_result != dating_labels[i]:
+            error_count += 1.0
+    print "the total error rate is: %f" % (
+        error_count / float(num_test_vectors))
+    print error_count
 
 
 def img2vector(filename):
