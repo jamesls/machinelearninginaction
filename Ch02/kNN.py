@@ -14,7 +14,7 @@ Output:     the most popular class label
 import operator
 from os import listdir
 
-from numpy import tile, array, zeros, shape, subtract, divide
+from numpy import tile, array, zeros, shape, subtract, divide, square, sqrt
 
 
 def knn_classify(input_vector, training_set, labels, k):
@@ -24,14 +24,14 @@ def knn_classify(input_vector, training_set, labels, k):
         input_vector: The input vector to classify.
         training_set: The matrix of training examples.
         labels: The class labels.
-        k: The number of neighbors t ouse.
+        k: The number of neighbors to use.
 
     """
     training_set_size = training_set.shape[0]
-    diff_matrix = tile(input_vector, (training_set_size, 1)) - training_set
-    diff_matrix_squared = diff_matrix ** 2
+    diff_matrix = subtract(input_vector, training_set)
+    diff_matrix_squared = square(diff_matrix)
     distances_squared = diff_matrix_squared.sum(axis=1)
-    distances = distances_squared ** 0.5
+    distances = sqrt(distances_squared)
     sorted_distance_indices = distances.argsort()
     class_count = {}
     for i in range(k):
@@ -39,7 +39,7 @@ def knn_classify(input_vector, training_set, labels, k):
         class_count[current_label] = class_count.get(current_label, 0) + 1
 
     sorted_class_count = sorted(class_count.iteritems(),
-                              key=operator.itemgetter(1), reverse=True)
+                                key=operator.itemgetter(1), reverse=True)
     return sorted_class_count[0][0]
 
 
