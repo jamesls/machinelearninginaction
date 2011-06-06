@@ -108,7 +108,7 @@ def normalize(data):
 def dating_class_test():
     # Hold out 10%.
     holdout_ratio = 0.10
-    dating_data, dating_labels = load_data_set('datingTestSet2.txt')
+    dating_data, dating_labels = load_data_set('datingTestSet.txt')
     normalized_data, ranges, minimum_values = normalize(dating_data)
     num_test_vectors = int(normalized_data.shape[0] * holdout_ratio)
     error_count = 0.0
