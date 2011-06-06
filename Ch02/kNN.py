@@ -13,6 +13,7 @@ Output:     the most popular class label
 """
 import operator
 from os import listdir
+from collections import defaultdict
 
 from numpy import tile, array, zeros, shape, subtract, divide, square, sqrt
 
@@ -32,14 +33,20 @@ def knn_classify(input_vector, training_set, labels, k):
     diff_matrix_squared = square(diff_matrix)
     distances_squared = diff_matrix_squared.sum(axis=1)
     distances = sqrt(distances_squared)
-    sorted_distance_indices = distances.argsort()
-    class_count = {}
+    class_count = defaultdict(int)
     for i in range(k):
-        current_label = labels[sorted_distance_indices[i]]
-        class_count[current_label] = class_count.get(current_label, 0) + 1
+        smallest = distances.argmin()
+        class_count[labels[smallest]] += 1
+        # Rather than removing the element from the necessary arrays,
+        # setting the smallest value to infinity essentially does
+        # the same thing (and is much simpler and efficient).
+        distances[smallest] = float('inf')
 
+    # Find the key with the highest value by first sorting the dictionary
+    # by values (highest first):
     sorted_class_count = sorted(class_count.iteritems(),
                                 key=operator.itemgetter(1), reverse=True)
+    # And then by returning the key associated with the highest value.
     return sorted_class_count[0][0]
 
 
