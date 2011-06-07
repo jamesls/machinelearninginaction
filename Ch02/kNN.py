@@ -12,7 +12,7 @@ Output:     the most popular class label
 @author: pbharrin
 """
 import operator
-from os import listdir
+import os
 from collections import defaultdict
 
 from numpy import array, zeros, subtract, divide, square, sqrt
@@ -131,38 +131,59 @@ def dating_class_test():
 
 
 def image_to_vector(filename):
+    """Given a 32 x 32 matrix, flatten it to 1 x 1024.
+
+    For example, if I had a 3 x 3 matrix:
+
+        [[0,1,2],
+        [3,4,5],
+        [6,7,8]]
+
+    This would return [0, 1, 2, 3, 4, 5, 6, 7 8].
+
+    """
     vector = zeros((1, 1024))
     f = open(filename)
     for i, line in enumerate(f):
         for j in range(32):
-            vector[0, 32 * i + j] = int(line[j])
+            vector[0,32*i+j] = int(line[j])
     return vector
 
 
-def handwritingClassTest():
-    labels = []
-    training_files = listdir('trainingDigits')
-    m = len(training_files)
-    training_matrix = zeros((m, 1024))
-    for i in range(m):
-        filename = training_files[i]
-        file_str = filename.split('.')[0]     #take off .txt
-        class_number = int(file_str.split('_')[0])
-        labels.append(class_number)
-        training_matrix[i,:] = image_to_vector('trainingDigits/%s' % filename)
-    test_files = listdir('testDigits')
+def handwriting_class_test():
+    training_matrix, labels = _train_handwriting_data(directory='trainingDigits')
+
     error_count = 0.0
-    num_test_files = len(test_files)
-    for i in range(num_test_files):
-        filename = test_files[i]
-        file_str = filename.split('.')[0]     #take off .txt
-        class_number = int(file_str.split('_')[0])
+    total_count = 0.0
+    for filename in os.listdir('testDigits'):
+        expected_class_number = _get_class_number_from_filename(filename)
         vector_to_test = image_to_vector('testDigits/%s' % filename)
         classifier_result = knn_classify(vector_to_test, training_matrix,
                                          labels, 3)
         print "the classifier came back with: %d, the real answer is: %d" % \
-            (classifier_result, class_number)
-        if classifier_result != class_number:
+            (classifier_result, expected_class_number)
+        if classifier_result != expected_class_number:
             error_count += 1.0
+        total_count += 1.0
     print "\nthe total number of errors is: %d" % error_count
-    print "\nthe total error rate is: %f" % (error_count / float(num_test_files))
+    print "\nthe total error rate is: %f" % (error_count / total_count)
+
+
+
+def _train_handwriting_data(directory):
+    labels = []
+    training_files = os.listdir(directory)
+    num_training_files = len(training_files)
+    training_matrix = zeros((num_training_files, 1024))
+    for i in range(num_training_files):
+        filename = training_files[i]
+        class_number = _get_class_number_from_filename(filename)
+        labels.append(class_number)
+        training_matrix[i,:] = image_to_vector('trainingDigits/%s' % filename)
+    return training_matrix, labels
+
+
+def _get_class_number_from_filename(filename):
+    # The class number is indicated by the filename: "1_12.txt" -> 1
+    # "2_9.txt" -> 2, "3_1.txt" -> 3, etc.
+    return int(os.path.splitext(filename)[0].split('_')[0])
