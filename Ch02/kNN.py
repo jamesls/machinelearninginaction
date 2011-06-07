@@ -28,7 +28,6 @@ def knn_classify(input_vector, training_set, labels, k):
         k: The number of neighbors to use.
 
     """
-    training_set_size = training_set.shape[0]
     diff_matrix = subtract(input_vector, training_set)
     diff_matrix_squared = square(diff_matrix)
     distances_squared = diff_matrix_squared.sum(axis=1)
