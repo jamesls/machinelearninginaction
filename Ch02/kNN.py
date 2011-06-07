@@ -130,7 +130,7 @@ def dating_class_test():
     print error_count
 
 
-def img2vector(filename):
+def image_to_vector(filename):
     vector = zeros((1, 1024))
     f = open(filename)
     for i, line in enumerate(f):
@@ -140,28 +140,29 @@ def img2vector(filename):
 
 
 def handwritingClassTest():
-    hwLabels = []
-    trainingFileList = listdir('trainingDigits')
-    m = len(trainingFileList)
-    trainingMat = zeros((m, 1024))
+    labels = []
+    training_files = listdir('trainingDigits')
+    m = len(training_files)
+    training_matrix = zeros((m, 1024))
     for i in range(m):
-        fileNameStr = trainingFileList[i]
-        fileStr = fileNameStr.split('.')[0]     #take off .txt
-        classNumStr = int(fileStr.split('_')[0])
-        hwLabels.append(classNumStr)
-        trainingMat[i,:] = img2vector('trainingDigits/%s' % fileNameStr)
-    testFileList = listdir('testDigits')
-    errorCount = 0.0
-    mTest = len(testFileList)
-    for i in range(mTest):
-        fileNameStr = testFileList[i]
-        fileStr = fileNameStr.split('.')[0]     #take off .txt
-        classNumStr = int(fileStr.split('_')[0])
-        vectorUnderTest = img2vector('testDigits/%s' % fileNameStr)
-        classifierResult = knn_classify(vectorUnderTest, trainingMat, hwLabels, 3)
+        filename = training_files[i]
+        file_str = filename.split('.')[0]     #take off .txt
+        class_number = int(file_str.split('_')[0])
+        labels.append(class_number)
+        training_matrix[i,:] = image_to_vector('trainingDigits/%s' % filename)
+    test_files = listdir('testDigits')
+    error_count = 0.0
+    num_test_files = len(test_files)
+    for i in range(num_test_files):
+        filename = test_files[i]
+        file_str = filename.split('.')[0]     #take off .txt
+        class_number = int(file_str.split('_')[0])
+        vector_to_test = image_to_vector('testDigits/%s' % filename)
+        classifier_result = knn_classify(vector_to_test, training_matrix,
+                                         labels, 3)
         print "the classifier came back with: %d, the real answer is: %d" % \
-            (classifierResult, classNumStr)
-        if classifierResult != classNumStr:
-            errorCount += 1.0
-    print "\nthe total number of errors is: %d" % errorCount
-    print "\nthe total error rate is: %f" % (errorCount / float(mTest))
+            (classifier_result, class_number)
+        if classifier_result != class_number:
+            error_count += 1.0
+    print "\nthe total number of errors is: %d" % error_count
+    print "\nthe total error rate is: %f" % (error_count / float(num_test_files))
