@@ -3,9 +3,8 @@ Created on Oct 12, 2010
 Decision Tree Source Code for Machine Learning in Action Ch. 2
 @author: Peter Harrington
 '''
-from math import log
 import operator
-from pprint import pprint
+from copy import deepcopy
 from collections import defaultdict
 
 from numpy import array, log2, multiply, divide, sum
@@ -61,63 +60,110 @@ def calculate_entropy_of_sequence(sequence):
     )
 
 
-def splitDataSet(dataSet, axis, value):
-    retDataSet = []
-    for featVec in dataSet:
-        if featVec[axis] == value:
-            reducedFeatVec = featVec[:axis]     #chop out axis used for splitting
-            reducedFeatVec.extend(featVec[axis+1:])
-            retDataSet.append(reducedFeatVec)
-    return retDataSet
+def split_dataset(dataSet, axis, value):
+    """Split the dataset on an axis by a certain value.
+
+    For example, given ::
+
+        dataset = [[1, 1, 'yes'],
+                   [1, 1, 'yes'],
+                   [1, 0, 'no'],
+                   [0, 1, 'no'],
+                   [0, 1, 'no']]
+    Splitting on the 0th axis by the value 1 would return
+    all elements whose 0th element equals 1.  Also The axis
+    to split on is removed from the returned data.  So the
+    above dataset would return::
+
+        print split_dataset(dataset, 0, 1)
+        [[1, 'yes'], [1, 'yes'], [0, 'no']]
+
+    Args:
+        dataset - A list of lists.  The inner lists must be
+            the same length.
+            See create_data_set() for example dataset.
+        axis: The index which to look for values.
+        value: The value to split on.
+
+    """
+    split_data = []
+    for feature_vector in dataSet:
+        if feature_vector[axis] == value:
+            # These next two lines chop out the axis used for splitting.
+            reduced_feature_vector = feature_vector[:axis]
+            reduced_feature_vector.extend(feature_vector[axis+1:])
+            split_data.append(reduced_feature_vector)
+    return split_data
 
 
-def chooseBestFeatureToSplit(dataSet):
-    numFeatures = len(dataSet[0]) - 1      #the last column is used for the labels
-    baseEntropy = calculate_entropy(dataSet)
-    bestInfoGain = 0.0; bestFeature = -1
-    for i in range(numFeatures):        #iterate over all the features
-        featList = [example[i] for example in dataSet]#create a list of all the examples of this feature
-        uniqueVals = set(featList)       #get a set of unique values
-        newEntropy = 0.0
-        for value in uniqueVals:
-            subDataSet = splitDataSet(dataSet, i, value)
-            prob = len(subDataSet)/float(len(dataSet))
-            newEntropy += prob * calculate_entropy(subDataSet)
-        infoGain = baseEntropy - newEntropy     #calculate the info gain; ie reduction in entropy
-        if (infoGain > bestInfoGain):       #compare this to the best gain so far
-            bestInfoGain = infoGain         #if better than current best, set to best
-            bestFeature = i
-    return bestFeature                      #returns an integer
+def choose_best_feature_to_split_on(dataset):
+    """Find the best feature to split on.
+
+    Returns the index that represents that feature.
+
+    Args:
+        dataset - A list of lists.  The inner lists must be
+            the same length.
+            See create_data_set() for example dataset.
+
+    """
+    num_features = len(dataset[0]) - 1
+    base_entropy = calculate_entropy(dataset)
+    best_info_gain = 0.0
+    best_feature = None
+    # The last column is used for the labels, so the total
+    # number of columns is the length of a row in the dataset
+    # minus 1.
+    for i in range(len(dataset[0]) - 1):
+        # Create a list of all the examples of this feature.
+        current_entropy = _calculate_entropy_for_split(dataset, feature_index=i)
+        # Calculate the info gain; ie reduction in entropy
+        info_gain = base_entropy - current_entropy
+        if (info_gain > best_info_gain):       #compare this to the best gain so far
+            best_info_gain = info_gain         #if better than current best, set to best
+            best_feature = i
+    return best_feature                      #returns an integer
 
 
-def majorityCnt(classList):
-    classCount={}
-    for vote in classList:
-        if vote not in classCount.keys(): classCount[vote] = 0
-        classCount[vote] += 1
-    sortedClassCount = sorted(classCount.iteritems(), key=operator.itemgetter(1), reverse=True)
+def _calculate_entropy_for_split(dataset, feature_index):
+    unique_values = set(example[feature_index] for example in dataset)
+    current_entropy = 0.0
+    for value in unique_values:
+        sub_dataset = split_dataset(dataset, feature_index, value)
+        prob = len(sub_dataset) / float(len(dataset))
+        current_entropy += prob * calculate_entropy(sub_dataset)
+    return current_entropy
+
+
+def majority_count(classes):
+    class_count = defaultdict(float)
+    for vote in classes:
+        class_count[vote] += 1
+    sortedClassCount = sorted(class_count.iteritems(),
+                              key=operator.itemgetter(1), reverse=True)
     return sortedClassCount[0][0]
 
 
-def createTree(dataSet,labels):
-    classList = [example[-1] for example in dataSet]
-    if classList.count(classList[0]) == len(classList):
-        return classList[0]#stop splitting when all of the classes are equal
-    if len(dataSet[0]) == 1: #stop splitting when there are no more features in dataSet
-        return majorityCnt(classList)
-    bestFeat = chooseBestFeatureToSplit(dataSet)
-    bestFeatLabel = labels[bestFeat]
-    myTree = {bestFeatLabel:{}}
-    del(labels[bestFeat])
-    featValues = [example[bestFeat] for example in dataSet]
-    uniqueVals = set(featValues)
-    for value in uniqueVals:
-        subLabels = labels[:]       #copy all of labels, so trees don't mess up existing labels
-        myTree[bestFeatLabel][value] = createTree(splitDataSet(dataSet, bestFeat, value),subLabels)
-    return myTree
+def create_tree(dataSet, labels):
+    class_labels = [example[-1] for example in dataSet]
+    # Stop splitting when all of the classes are equal.
+    if len(set(class_labels)) == 1:
+        return class_labels[0]
+    # Stop splitting when there are no more features in dataSet.
+    if len(dataSet[0]) == 1:
+        return majority_count(class_labels)
+    best_feature_index = choose_best_feature_to_split_on(dataSet)
+    best_feature_name = labels[best_feature_index]
+    tree = {best_feature_name: {}}
+    del labels[best_feature_index]
+    for value in set(el[best_feature_index] for el in dataSet):
+        tree[best_feature_name][value] = create_tree(
+            split_dataset(dataSet, best_feature_index, value),
+            labels[:])
+    return tree
 
 
-def classify(inputTree,featLabels,testVec):
+def classify(inputTree, featLabels, testVec):
     firstStr = inputTree.keys()[0]
     secondDict = inputTree[firstStr]
     featIndex = featLabels.index(firstStr)
@@ -149,11 +195,22 @@ def demo():
         print row
     print "\nEntropy of original data set:", calculate_entropy(data)
     print "\nMixing up the data more:"
-    data2 = data[:]
+    data2 = deepcopy(data)
     data2[0][-1] = 'maybe'
+    for row in data2:
+        print row
+    print "\nEntropy of original data set:", calculate_entropy(data2)
+
+    print "Data set:"
     for row in data:
         print row
-    print "\nEntropy of original data set:", calculate_entropy(data)
+    print "\n\nSplitting data on 0th axis by value 1:"
+    print split_dataset(data, 0, 1)
+    print "\n\nThe best feature to split on:"
+    print choose_best_feature_to_split_on(data)
+
+    print "Creating decision tree:"
+    print create_tree(data, labels)
 
 
 if __name__ == '__main__':
