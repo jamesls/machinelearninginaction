@@ -144,34 +144,65 @@ def majority_count(classes):
     return sortedClassCount[0][0]
 
 
-def create_tree(dataSet, labels):
-    class_labels = [example[-1] for example in dataSet]
+def create_tree(dataset, labels):
+    """Construct a decision tree.
+
+    Args:
+        dataset - A list of lists, where the inner lists'
+            last column is the class label, for example::
+
+                [[1, 1, 'label1'], [1, 2, 'label2']]
+            See create_data_set() for example dataset.
+        labels - A list of textual descriptions of the
+            features.  For example, in the list above for
+            dataset, the corresponding labels might be
+            'no surfacing' and 'flippers' which correspond
+            to what the two columns mean (the third column
+            is the class).
+
+    Returns the constructed decision tree, which is represented
+    as a nested dictionary.  There's a single key in the top
+    level dictionary which represents the root node. The
+    subsequent dictionaries represent various features
+    and their possible values.  A leaf node represents
+    the class label.  For example::
+
+        {'no surfacing':
+            {0: 'no',
+             1: {'flippers':
+                 {0: 'no',
+                  1: 'yes'}}}}
+
+    """
+    labels = labels[:]
+    class_labels = [example[-1] for example in dataset]
     # Stop splitting when all of the classes are equal.
     if len(set(class_labels)) == 1:
         return class_labels[0]
-    # Stop splitting when there are no more features in dataSet.
-    if len(dataSet[0]) == 1:
+    # Stop splitting when there are no more features in dataset.
+    if len(dataset[0]) == 1:
         return majority_count(class_labels)
-    best_feature_index = choose_best_feature_to_split_on(dataSet)
+    best_feature_index = choose_best_feature_to_split_on(dataset)
     best_feature_name = labels[best_feature_index]
     tree = {best_feature_name: {}}
     del labels[best_feature_index]
-    for value in set(el[best_feature_index] for el in dataSet):
+    for value in set(el[best_feature_index] for el in dataset):
         tree[best_feature_name][value] = create_tree(
-            split_dataset(dataSet, best_feature_index, value),
-            labels[:])
+            split_dataset(dataset, best_feature_index, value),
+            labels)
     return tree
 
 
 def classify(inputTree, featLabels, testVec):
-    firstStr = inputTree.keys()[0]
-    secondDict = inputTree[firstStr]
-    featIndex = featLabels.index(firstStr)
+    root = inputTree.keys()[0]
+    secondDict = inputTree[root]
+    featIndex = featLabels.index(root)
     key = testVec[featIndex]
     valueOfFeat = secondDict[key]
     if isinstance(valueOfFeat, dict):
         classLabel = classify(valueOfFeat, featLabels, testVec)
-    else: classLabel = valueOfFeat
+    else:
+        classLabel = valueOfFeat
     return classLabel
 
 
