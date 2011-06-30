@@ -64,22 +64,35 @@ def plot_tree(myTree, parentPt, nodeTxt):#if the first key tells you what feat w
     plot_tree.yOff = plot_tree.yOff + 1.0/plot_tree.totalD
 
 
-def create_plot(inTree):
-    fig = plot.figure(1, facecolor='white')
-    fig.clf()
+def create_plot(tree):
+    figure = plot.figure(1, facecolor='white')
+    figure.clf()
     axprops = dict(xticks=[], yticks=[])
-    create_plot.ax1 = plot.subplot(111, frameon=False, **axprops)    #no ticks
-    plot_tree.totalW = float(get_num_leafs(inTree))
-    plot_tree.totalD = float(get_tree_depth(inTree))
-    plot_tree.xOff = -0.5/plot_tree.totalW; plot_tree.yOff = 1.0;
-    plot_tree(inTree, (0.5,1.0), '')
+    create_plot.ax1 = plot.subplot(111, frameon=False, **axprops)
+    plot_tree.totalW = float(get_num_leafs(tree))
+    plot_tree.totalD = float(get_tree_depth(tree))
+    plot_tree.xOff = -0.5 / plot_tree.totalW
+    plot_tree.yOff = 1.0;
+    plot_tree(tree, (0.5,1.0), '')
     plot.show()
 
 
 def retrieve_tree(i):
-    listOfTrees =[{'no surfacing': {0: 'no', 1: {'flippers': {0: 'no', 1: 'yes'}}}},
-                  {'no surfacing': {0: 'no', 1: {'flippers': {0: {'head': {0: 'no', 1: 'yes'}}, 1: 'no'}}}}
-                  ]
+    listOfTrees =[
+        {'no surfacing':
+         {0: 'no',
+          1: {'flippers':
+           {0: 'no',
+            1: 'yes'}}}},
+        {'no surfacing':
+         {0: 'no',
+          1: {'flippers':
+              {0:
+               {'head':
+                {0: 'no',
+                 1: 'yes'}},
+               1: 'no'}}}}
+    ]
     return listOfTrees[i]
 
 
